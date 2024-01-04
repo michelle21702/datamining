@@ -1,0 +1,67 @@
+library(arules)
+library(arulesViz)
+library(pastecs)
+library(cluster)
+library(factoextra) 
+library(dbscan)
+library(tree)
+library(ISLR)
+library(randomForest)
+
+data <- read.csv("/Users/michellechong/Desktop/R/DATASET/BankChurners.csv")
+names(data)
+
+summary(data)
+str(data) 
+data <- data[,-22:-23]
+class(data$Attrition_Flag)
+table(data$Attrition_Flag)
+
+#is.na(data) 
+sum(is.na(data$Attrition_Flag)) 
+data <- na.omit(data) 
+
+data$Attrition_Flag <- as.factor(data$Attrition_Flag)
+data$Gender <- as.factor(data$Gender)
+data[6:9] <- lapply(data[6:9], factor)
+str(data)
+
+set.seed(124)
+train.index <- sample(1:nrow(data), .8*nrow(data))
+train.set <- data[train.index,]
+test.set <- data[-train.index,]
+perform.test <- data$Attrition_Flag[-train.index]
+
+dtree.trained <-tree(Attrition_Flag~.,train.set)
+summary(dtree.trained) 
+
+dtree.trained
+plot(dtree.trained)
+text(dtree.trained)
+
+dtree.tested <- predict(dtree.trained, test.set, type = 'class')
+table(dtree.tested, perform.test)
+accuracy.tested <- (224+1646)/2026
+accuracy.tested 
+
+dtree.cv <- cv.tree(dtree.trained, FUN = prune.misclass)
+dtree.cv 
+
+dtree.pruned <- prune.misclass(dtree.trained, best = 6)
+summary(dtree.pruned)
+dtree.pruned
+plot(dtree.pruned)
+
+text(dtree.pruned, pretty =0)
+dtree.pruned.tested <- predict(dtree.pruned, test.set, type = 'class')
+table(dtree.pruned.tested, perform.test)
+accuracy.pruned.test <- (243+1605)/2026
+accuracy.pruned.test 
+
+dtree.rf <- randomForest(Attrition_Flag~., train.set)
+dtree.rf.tested <- predict(dtree.rf, test.set, type = 'class')
+table(dtree.rf.tested, perform.test)
+accuracy.rf.tested <- (281+1674)/2026
+accuracy.rf.tested 
+
+
